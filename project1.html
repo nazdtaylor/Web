@@ -1,0 +1,420 @@
+<CTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE>Blackjack by Naz Taylor/Paul Piwowarski/Linton</TITLE>
+
+	<SCRIPT LANGUAGE="JavaScript">
+/* 
+CS316 program 1
+Average win percent is around 48.5% it very rarely goes outside of 48 and 49 and seems to fairly evenly go between the high and low end of 48.
+Initial Author: Paul Piwowarski 2014/09
+Modifications: Paul Linton 2016/09
+Modification to get working: Naz Taylor 2016/10
+
+Example code to start Program 1
+*/
+//****************************** GLOBAL VARIABLES ***********************************************
+// DSIZE is size of deck: 52 for normal deck
+// Note: do not hardcode deck size. Use this variable
+// to simplify my (and your) testing
+var DSIZE = 52; // size of deck
+var card = new Array(DSIZE); // shuffled deck
+var cardstart = new Array(DSIZE); // starting deck in order
+var cc; // index into card array during play
+var dealpressed = 0;
+var stay = 0;
+var dlvalue;
+var myvalue;
+var winnum = 0;
+var games = 0;
+var percent;
+var myace = 0;
+var dlace = 0;
+var myturn = 0;
+
+// Put other global variables here ***********************************************************************
+shuffle();   // start with new deal
+// shuffle
+// This is one way to create a shuffled deck
+// reshuffle the cards, put in card array
+// Preconditions:
+//	New Deal button pressed
+// Postconditions:
+//	Card array filled and shuffled
+
+function shuffle() {  
+	// cardstart is unshuffled 1,2,3....
+	// card 1 is ace of clubs (1.png)
+	// card 2 is ace of spades (2.png)
+	// card 52 is 2 of diamonds (52.png)
+	for (var i = 0; i < DSIZE;i++) {
+		cardstart[i] = i+1;
+	}
+	// select card randomly from cardstart and put in card
+	var randcard; // randomly selected card 
+	for (var j = 0; j < DSIZE; j++) {
+		randcard = Math.round(Math.random() * (DSIZE - j - 1)); // choose card
+		card[j] = cardstart[randcard]; // store random card
+		cardstart.splice(randcard, 1); // pack array
+	}  
+	cc = 0;              // index into card array
+	dealpressed = 0;
+	myvalue = 0;
+	dlvalue = 0;
+}
+
+// resetdata
+// reset all variables, screen fields to start fresh
+
+function resetdata() {
+	percent = 0;
+	stay = 0;
+	dealpressed = 0;
+	dlvalue = 0;
+	myvalue = 0;
+	winnum = 0;
+	games = 0;
+	myace = 0;
+	dlace = 0;
+	shuffle();
+	document.JForm.winning.value = percent;
+	document.JForm.myscore.value = myvalue;
+	document.JForm.opscore.value = dlvalue;
+	document.JForm.myresult.value = 0;
+	
+}
+
+// calculate
+// calculate value of card
+// Preconditions:
+//	Card passed
+//	1 <= card <= 52
+// Postconditions:
+//	Card value returned
+function calculate(card) {
+var value; // numerical value of card
+	if (card <= 4) {    // ace
+		value = 11;
+		return value; 
+	}
+	if (card <= 20) {   // face card or 10
+		value = 10;
+		return value;
+	}
+	if (card <= 24) {  // 9, and so forth
+		value = 9;
+		return value;
+	}    
+	if (card <= 28) {
+		value = 8;
+		return value;
+	}      
+	if (card <= 32) {
+		value = 7;
+		return value;
+	}    
+	if (card <= 36) {
+		value = 6;
+		return value;
+	}    
+	if (card <= 40) {
+		value = 5;
+		return value;
+	}    
+	if (card <= 44) {
+		value = 4;
+		return value;
+	}    
+	if (card <= 48) {
+		value = 3;
+		return value;
+	}   
+	value = 2;          // only 2 left
+	return value; 
+}
+
+  // getcard
+  // get card from cardstart, then remove from deck
+  function getcard() {
+    var newcard;
+    if (cc > 40){
+	shuffle();
+	}
+    else {
+    	newcard = card[cc++];
+	// Flag if I have an ace
+	if (myturn == 1 && newcard <= 4){
+		myace = 1;
+	}
+	// Flag if dealer has an ace
+	else if (myturn == 0 && newcard <=4){
+		dlace = 1;
+	}
+    	return newcard;
+	}
+  }
+
+  // run 1000 times
+  function run1000() {
+	var i;
+	shuffle();
+	for (i=0;i<1000;i++) {
+ 		deal();
+		// If any of these cases are met then take a hit
+		while (myvalue < dlvalue || (myvalue < 17 && dlvalue >= 17) || (myvalue >= 17 && dlvalue > 17 && myace == 1) || (myvalue < dlvalue && dlvalue < 17 && myace == 1 && dlace == 1) ){
+			deal();
+ 		}
+			run();		
+    }   
+	
+  }
+ 
+  // hit
+  // If I have not hit stay then i take the hit
+  // If stay has been hit then this call will give the dealer a card
+  function hit(playerhand, dealerhand) {
+ 	if (stay == 0){
+		mycard3number = getcard();
+		myvalue = myvalue + calculate(mycard3number);
+		document.JForm.myscore.value = myvalue;
+		return mycard3number;
+               	}    
+	else{
+		dlcard3number = getcard();
+		dlvalue = dlvalue + calculate(dlcard3number);
+		document.JForm.opscore.value = dlvalue;
+		return dlcard3number;
+ }
+}
+
+
+
+// run
+// after stay, determine whether to take card or not
+// Preconditions:
+//	Stay button pressed
+// Postconditions:
+//	Game completed
+//	Results displayed 
+function run() {
+	stay++;
+        while (dlvalue < 17){
+        	var dlhitnumber = hit(mycards, dlcards);
+                var dlhit = "<img src = '"+dlhitnumber+".png' />";
+                document.getElementById("dlcards").innerHTML = dlcards + dlhit;
+		}
+		if (dlace = 1 && dlvalue > 21){
+			dlvalue = dlvalue - 10;
+			dlace = 0;
+			document.JForm.opscore.value = dlvalue;
+			}
+
+ 	                if (dlvalue > 21) {
+        	                document.JForm.opscore.value = 'BUST';
+                                document.JForm.myresult.value = 'WIN';
+                                winnum++;
+                                games++;
+				dealpressed = 0;
+				stay = 0;
+				percent = (winnum/games) * 100;
+				document.JForm.winning.value = percent;
+				}
+                        else if (myvalue > dlvalue){
+                                document.JForm.myresult.value = 'WIN';
+                                winnum++;
+                                games++;
+				dealpressed = 0;
+				stay = 0;
+				percent = (winnum/games) * 100;
+				document.JForm.winning.value = percent;
+				} 
+                        else if (myvalue == dlvalue){
+                                document.JForm.myresult.value = 'PUSH';
+                                games++;
+				winnum++;
+                                dealpressed = 0;
+                                stay = 0;
+				percent = (winnum/games) * 100;
+				document.JForm.winning.value = percent;
+				}
+			else if (dlvalue == 21 && myvalue != 21){
+				document.JForm.myresult.value = 'LOSS';
+				games++;
+				dealpressed = 0;
+				stay = 0;
+				percent = (winnum/games) * 100;
+				document.JForm.winning.value = percent;
+				}
+                        else {
+                                document.JForm.myresult.value = 'LOSS';
+                                games++;
+                                dealpressed = 0;
+                                stay = 0;
+				percent = (winnum/games) * 100;
+				document.JForm.winning.value = percent;
+                                }
+}
+// deal
+// start by dealing 2 cards to opponent and you
+function deal() {
+	// deal cards and display data
+	dealpressed++; // deal button has been pressed
+	// draw two cards for each player
+	if (dealpressed == 1){
+	myace = 0;
+	dlace = 0;
+	myturn = 1;
+	dlcard1number = getcard();
+	dlcard2number = getcard();
+	myturn = 0;
+	mycard1number = getcard();
+	mycard2number = getcard();
+	var dlcard1 = "<img src = '"+dlcard1number+".png' />";
+	var dlcard2 = "<img src = '"+dlcard2number+".png' />";
+	dlcards = dlcard1 + dlcard2;
+	var mycard1 = "<img src = '"+mycard1number+".png' />";
+	var mycard2 = "<img src = '"+mycard2number+".png' />";
+	mycards = mycard1 + mycard2;
+	dlvalue = calculate(dlcard1number) + calculate(dlcard2number);
+	myvalue = calculate(mycard1number) + calculate(mycard2number);
+    	document.JForm.opscore.value = dlvalue;
+    	document.JForm.myscore.value = myvalue;
+    	// Display cards on screen
+    	document.getElementById("dlcards").innerHTML = dlcards; 
+	document.getElementById("mycards").innerHTML = mycards;
+	}
+	// If deal has already been predded once in the turn then this will call for a hit instead.
+	else {
+		if (stay == 0){
+		myturn = 1;
+		var hitcardnumber = hit(mycards, dlcards);
+		var hitcard = "<img src = '"+hitcardnumber+".png' />";
+		document.getElementById("mycards").innerHTML = mycards + hitcard;
+		myturn = 0;
+		}
+		if (myace == 1 && myvalue > 21){
+			myvalue = myvalue - 10;
+			myace = 0;
+			document.JForm.myscore.value = myvalue;
+		}
+		if (myvalue > 21){
+			myvalue = 'BUST';
+			document.JForm.myscore.value = myvalue;
+			document.JForm.myresult.value = 'LOSS';
+			dealpressed = 0;
+			stay = 0;
+			games++;
+			percent = (winnum/games) * 100;
+			document.JForm.winning.value = percent;
+		 }
+		 else if (myvalue == 21){
+                         document.JForm.myresult.value = 'WIN';
+                         games++;
+                         winnum++;
+                         dealpressed = 0;
+                         stay = 0;
+                         percent = (winnum/games) * 100;
+                         document.JForm.winning.value = percent;
+                         }
+		else if (dlvalue == 21 && myvalue != 21) {
+			document.JForm.myresult.value = 'LOSS';
+			games++;
+			winnum++;
+			dealpressed = 0;
+			stay = 0;
+			percent = (winnum/games) * 100;
+			document.JForm.winning.value = percent;
+			}
+		
+	}
+}
+</SCRIPT>
+
+</HEAD>
+<BODY >
+<FORM NAME="JForm">
+<CENTER>
+	<TABLE CELLPADDING=2 CELLSPACING=2 STYLE="page-break-before: always">
+		<TR>
+			<TH STYLE="border: none; padding: 0in">
+				<P>New deal</P>
+			</TH>
+			<TH STYLE="border: none; padding: 0in">
+				<P><INPUT TYPE=BUTTON VALUE="Shuffle" STYLE="width: 1.08in; height: 0.4in" ONCLICK="shuffle();"> </P>
+			</TH>
+			<TH STYLE="border: none; padding: 0in">
+				<P>Reset</P>
+			</TH>
+			<TH STYLE="border: none; padding: 0in">
+				<P><INPUT TYPE=BUTTON VALUE="Reset" STYLE="width: 0.75in; height: 0.4in" ONCLICK="resetdata();"> </P>
+			</TH>
+		</TR>		<!-- row 1 -->
+		<TR>
+			<TH STYLE="border: none; padding: 0in">
+				<P>Dealer score: </P>
+			</TH>
+			<TH STYLE="border: none; padding: 0in">
+				<P><INPUT TYPE=TEXT NAME="opscore" VALUE="0" SIZE=5 STYLE="width: 0.51in; height: 0.31in"> </P>
+			</TH>
+			<TH STYLE="border: none; padding: 0in">
+				<P>My score: </P>
+			</TH>
+			<TH STYLE="border: none; padding: 0in">
+				<P><INPUT TYPE=TEXT NAME="myscore" VALUE="0" SIZE=5 STYLE="width: 0.51in; height: 0.31in"> </P>
+			</TH>
+			<TD COLSPAN=2 VALIGN=TOP STYLE="border: none; padding: 0in"></TD>
+		</TR>		<!-- row 2 -->
+		<TR>
+			<TH STYLE="border: none; padding: 0in">
+				<P>Win/Loss?: </P>
+			</TH>
+			<TH STYLE="border: none; padding: 0in">
+				<P><INPUT TYPE=TEXT NAME="myresult" VALUE="0" SIZE=5 STYLE="width: 0.51in; height: 0.31in"> </P>
+			</TH>
+<!--			<TD COLSPAN=2 VALIGN=TOP STYLE="border: none; padding: 0in"></TD>  -->
+			<TH STYLE="border: none; padding: 0in">
+				<P>My win %: </P>
+			</TH>
+			<TH STYLE="border: none; padding: 0in"> 
+				<P><INPUT TYPE=TEXT NAME="winning" VALUE="100" SIZE=5 STYLE="width: 0.51in; height: 0.31in"> </P>
+			</TH>
+		
+			<TH STYLE="border: none; padding: 0in"></TH>
+			<TD VALIGN=TOP STYLE="border: none; padding: 0in"></TD>
+		</TR>		<!-- row 3 -->
+		<TR>
+			<TH STYLE="border: none; padding: 0in">
+				<P>Deal/Hit</P> 
+			</TH>
+			<TH STYLE="border: none; padding: 0in">
+				<P><INPUT TYPE=BUTTON VALUE="Deal/Hit" STYLE="width: 0.64in; height: 0.4in" ONCLICK="deal();"> </P>
+			</TH>
+			<TH STYLE="border: none; padding: 0in">
+				<P>Stay</P> 
+			</TH>
+			<TH STYLE="border: none; padding: 0in">
+				<P><INPUT TYPE=BUTTON VALUE="Stay" STYLE="width: 0.59in; height: 0.4in" ONCLICK="run();"> </P>
+			</TH>
+			<TH STYLE="border: none; padding: 0in"> 
+				<P>Run 1000 times</P>
+			</TH>
+			<TH STYLE="border: none; padding: 0in">
+				<P><INPUT TYPE=BUTTON VALUE="Run" STYLE="width: 0.59in; height: 0.4in" ONCLICK="run1000();"> </P>
+			</TH>
+		</TR>		<!-- row 4 -->
+	</TABLE>
+</CENTER>
+</FORM>
+<h2 align=center>Dealer's Cards</h2>
+<div id="dlcards" align=center> 
+	<h2  align=center></h2>
+</div>
+<h2  align=center> My Cards</h2>
+<div id="mycards" align=center >
+	<h2 class="WESTERN" align=center></h2>
+</div>
+
+</BODY>
+</HTML>
+
